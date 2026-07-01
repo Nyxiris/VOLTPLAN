@@ -1,0 +1,105 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    // Validation helper for Client
+    function isValidClient(data) {
+      return data.keys().hasAll(['name', 'address', 'userId', 'createdAt', 'updatedAt'])
+        && data.keys().size() <= 8
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+        && data.address is string && data.address.size() > 0 && data.address.size() <= 1000
+        && data.userId == request.auth.uid
+        && (data.get('phone', '') is string && data.get('phone', '').size() <= 50)
+        && (data.get('email', '') is string && data.get('email', '').size() <= 100)
+        && (data.get('id', '') is string && data.get('id', '').size() <= 128);
+    }
+
+    // Validation helper for Lead
+    function isValidLead(data) {
+      return data.keys().hasAll(['clientName', 'email', 'service'])
+        && data.keys().size() <= 12
+        && data.clientName is string && data.clientName.size() <= 200
+        && data.email is string && data.email.size() <= 100;
+    }
+
+    // Validation helper for Invoice
+    function isValidInvoice(data) {
+      return data.keys().hasAll(['invoiceRef', 'clientName', 'totalTTC', 'status', 'userId'])
+        && data.invoiceRef is string && data.invoiceRef.size() <= 100
+        && data.clientName is string && data.clientName.size() <= 200
+        && data.totalTTC is number
+        && data.status in ['PENDING_VALIDATION', 'VALIDATED', 'REFUSED']
+        && data.userId is string;
+    }
+    
+    // Test connection path
+    match /test/connection {
+      allow read: if true;
+    }
+
+    match /clients/{clientId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && request.auth.token.email_verified == true
+        && isValidId(clientId)
+        && isValidClient(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+        
+      allow update: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && isValidId(clientId)
+        && existing().userId == request.auth.uid
+        && isValidClient(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasAny(['name', 'address', 'phone', 'email', 'updatedAt']);
+        
+      allow delete: if isSignedIn()
+        && request.auth.token.email_verified == true
+        && existing().userId == request.auth.uid;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'admin@voltplan.pro' || 
+        request.auth.token.email == 'gbatichristian@gmail.com'
+      );
+    }
+
+    match /leads/{leadId} {
+      allow create: if isValidId(leadId) && isValidLead(incoming());
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /invoices/{invoiceId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidId(invoiceId) && isValidInvoice(incoming()) && incoming().userId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAdmin();
+    }
+  }
+}

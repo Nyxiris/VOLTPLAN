@@ -1,0 +1,95 @@
+{
+  "entities": {
+    "client": {
+      "title": "Client",
+      "description": "Represents a regular client in the database",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier of the client"
+        },
+        "name": {
+          "type": "string",
+          "description": "Full name of the client or company"
+        },
+        "address": {
+          "type": "string",
+          "description": "Postal or physical address of the client"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Phone number of the client"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the client"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Authentication User ID of the owner"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the client was created"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Timestamp when the client was last updated"
+        }
+      },
+      "required": ["name", "address"]
+    },
+    "lead": {
+      "title": "Lead",
+      "description": "Represents a lead/quote request from the corporate site",
+      "type": "object",
+      "properties": {
+        "clientName": { "type": "string" },
+        "company": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "service": { "type": "string" },
+        "budget": { "type": "string" },
+        "description": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientName", "email", "service"]
+    },
+    "invoice": {
+      "title": "Invoice",
+      "description": "Represents a proforma invoice or quote",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "invoiceRef": { "type": "string" },
+        "clientName": { "type": "string" },
+        "date": { "type": "string" },
+        "totalTTC": { "type": "number" },
+        "currency": { "type": "string" },
+        "timestamp": { "type": "number" },
+        "status": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["invoiceRef", "clientName", "totalTTC"]
+    }
+  },
+  "firestore": {
+    "clients/{clientId}": {
+      "schema": "client",
+      "description": "The collection of regular clients"
+    },
+    "leads/{leadId}": {
+      "schema": "lead",
+      "description": "The collection of leads from contact form"
+    },
+    "invoices/{invoiceId}": {
+      "schema": "invoice",
+      "description": "The collection of invoices for public viewing and history"
+    }
+  }
+}

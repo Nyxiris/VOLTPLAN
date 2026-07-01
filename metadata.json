@@ -1,0 +1,6 @@
+{
+  "name": "VoltPlan Pro",
+  "description": "Professional low-voltage system design tool for PDF architectural plans (CCTV, Network, Fire, WiFi).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
